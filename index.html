@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arte & Cerámica | Tienda</title>
+<style>
+:root{--primary:#7b4f35;--secondary:#f5eee8;--accent:#2e8b57;--dark:#2d241f;--white:#fff;--muted:#746b65}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#faf8f6;color:var(--dark)}
+header{background:var(--primary);color:white;padding:22px 5%;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px #0002}
+.logo{font-size:25px;font-weight:700}.cart-btn{border:0;background:white;color:var(--primary);padding:11px 16px;border-radius:25px;font-weight:700;cursor:pointer}
+.hero{padding:45px 5%;background:linear-gradient(120deg,#f3e5da,#fff);text-align:center}.hero h1{margin:0 0 10px;font-size:36px}.hero p{color:var(--muted);font-size:17px}
+.container{max-width:1100px;margin:30px auto;padding:0 20px}.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 3px 14px #00000012;border:1px solid #eee}.product-img{height:160px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:58px}.card-body{padding:18px}.card h3{margin:0 0 8px}.price{font-size:20px;font-weight:bold;color:var(--primary);margin:10px 0}.add{width:100%;padding:11px;border:0;border-radius:9px;background:var(--primary);color:white;font-weight:bold;cursor:pointer}.add:hover{opacity:.9}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:center;justify-content:center;padding:15px}.modal.active{display:flex}.box{background:white;width:min(600px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:24px;position:relative}.close{position:absolute;right:18px;top:15px;border:0;background:none;font-size:25px;cursor:pointer}
+.cart-item{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding:13px 0;gap:10px}.qty button{border:1px solid #ddd;background:#f6f6f6;border-radius:6px;padding:4px 9px;cursor:pointer}.qty span{padding:0 8px}.total{font-size:22px;font-weight:bold;text-align:right;margin:18px 0}.primary-btn,.whatsapp{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px;font-weight:bold;cursor:pointer}.primary-btn{background:#333;color:white}.whatsapp{background:#25D366;color:white;text-decoration:none;display:block;text-align:center;margin-top:10px}.muted{color:var(--muted);font-size:14px}
+.form{display:grid;gap:10px;margin-top:15px}.form input,.form textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;font:inherit}.form textarea{min-height:75px}
+.success{background:#edf9f1;border:1px solid #b9e4c7;padding:15px;border-radius:10px;margin:15px 0}.hidden{display:none!important}
+footer{text-align:center;padding:35px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🏺 Arte & Cerámica</div>
+  <button class="cart-btn" onclick="openCart()">🛒 Carrito (<span id="cartCount">0</span>)</button>
+</header>
+
+<section class="hero">
+  <h1>Productos para Cerámica</h1>
+  <p>Elegí tus productos, agregalos al carrito y realizá tu pedido.</p>
+</section>
+
+<main class="container">
+  <h2>Productos</h2>
+  <div class="products" id="products"></div>
+</main>
+
+<footer>© 2026 Arte & Cerámica · Tienda online</footer>
+
+<div class="modal" id="cartModal">
+ <div class="box">
+  <button class="close" onclick="closeModal('cartModal')">×</button>
+  <h2>🛒 Tu carrito</h2>
+  <div id="cartItems"></div>
+  <div class="total">Total: $<span id="cartTotal">0</span></div>
+  <button class="primary-btn" onclick="goToCheckout()">Continuar al pago</button>
+ </div>
+</div>
+
+<div class="modal" id="checkoutModal">
+ <div class="box">
+  <button class="close" onclick="closeModal('checkoutModal')">×</button>
+  <h2>💳 Datos del pedido</h2>
+  <p class="muted">Este es un pago simulado para probar el funcionamiento de la tienda.</p>
+  <div class="form">
+   <input id="name" placeholder="Nombre y apellido" required>
+   <input id="phone" placeholder="Teléfono">
+   <textarea id="notes" placeholder="Observaciones o indicaciones para el pedido"></textarea>
+  </div>
+  <div class="total">Total a pagar: $<span id="checkoutTotal">0</span></div>
+  <button class="primary-btn" onclick="simulatePayment()">Simular pago aprobado</button>
+ </div>
+</div>
+
+<div class="modal" id="successModal">
+ <div class="box">
+  <button class="close" onclick="closeModal('successModal')">×</button>
+  <div class="success">
+   <h2>✅ ¡Pago aprobado!</h2>
+   <p>Tu pedido fue generado correctamente.</p>
+   <p><strong>Número de pedido: <span id="orderNumber"></span></strong></p>
+  </div>
+  <p>Total abonado: <strong>$<span id="paidTotal"></span></strong></p>
+  <p class="muted">Ahora podés enviar el pedido a la librería por WhatsApp.</p>
+  <a id="whatsappBtn" class="whatsapp" target="_blank" rel="noopener">📲 Enviar pedido por WhatsApp</a>
+ </div>
+</div>
+
+<script>
+const WHATSAPP_NUMBER = "5492920000000"; // REEMPLAZAR por el WhatsApp real de la librería
+
+const products = [
+ {id:1,name:"Arcilla roja 1 kg",price:4500,emoji:"🧱"},
+ {id:2,name:"Esmalte cerámico azul",price:6200,emoji:"🎨"},
+ {id:3,name:"Pinceles para cerámica x5",price:3800,emoji:"🖌️"},
+ {id:4,name:"Herramientas para modelado",price:7500,emoji:"🛠️"},
+ {id:5,name:"Engobe blanco 500 g",price:5200,emoji:"⚪"},
+ {id:6,name:"Rodillo para cerámica",price:8900,emoji:"🪵"},
+ {id:7,name:"Moldes de silicona",price:6800,emoji:"🧩"},
+ {id:8,name:"Esponjas x3",price:2500,emoji:"🧽"}
+];
+
+let cart = [];
+
+function money(n){return n.toLocaleString("es-AR")}
+function renderProducts(){
+ const el=document.getElementById("products");
+ el.innerHTML=products.map(p=>`
+  <article class="card">
+   <div class="product-img">${p.emoji}</div>
+   <div class="card-body">
+    <h3>${p.name}</h3>
+    <div class="price">$${money(p.price)}</div>
+    <button class="add" onclick="addToCart(${p.id})">Agregar al carrito</button>
+   </div>
+  </article>`).join("");
+}
+function addToCart(id){
+ const item=cart.find(x=>x.id===id);
+ if(item)item.qty++; else cart.push({id,qty:1});
+ updateCart();
+}
+function changeQty(id,delta){
+ const item=cart.find(x=>x.id===id); if(!item)return;
+ item.qty+=delta; if(item.qty<=0)cart=cart.filter(x=>x.id!==id);
+ updateCart();
+}
+function total(){
+ return cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0);
+}
+function updateCart(){
+ document.getElementById("cartCount").textContent=cart.reduce((s,i)=>s+i.qty,0);
+ const el=document.getElementById("cartItems");
+ if(!cart.length){el.innerHTML="<p>El carrito está vacío.</p>";document.getElementById("cartTotal").textContent="0";return}
+ el.innerHTML=cart.map(i=>{
+  const p=products.find(x=>x.id===i.id);
+  return `<div class="cart-item"><div><strong>${p.name}</strong><br><span class="muted">$${money(p.price)} c/u</span></div>
+   <div class="qty"><button onclick="changeQty(${p.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${p.id},1)">+</button></div>
+   <strong>$${money(p.price*i.qty)}</strong></div>`;
+ }).join("");
+ document.getElementById("cartTotal").textContent=money(total());
+}
+function openCart(){updateCart();document.getElementById("cartModal").classList.add("active")}
+function closeModal(id){document.getElementById(id).classList.remove("active")}
+function goToCheckout(){
+ if(!cart.length){alert("Agregá al menos un producto.");return}
+ closeModal("cartModal");document.getElementById("checkoutTotal").textContent=money(total());document.getElementById("checkoutModal").classList.add("active");
+}
+function simulatePayment(){
+ const name=document.getElementById("name").value.trim();
+ if(!name){alert("Ingresá tu nombre y apellido.");return}
+ const order="PED-"+Math.floor(10000+Math.random()*90000);
+ const t=total();
+ const lines=cart.map(i=>{const p=products.find(x=>x.id===i.id);return `• ${p.name} x${i.qty} — $${money(p.price*i.qty)}`}).join("\n");
+ const msg=`Hola, realicé el pedido ${order} y el pago fue aprobado.\n\nCliente: ${name}\nTeléfono: ${document.getElementById("phone").value || "No informado"}\n\nPEDIDO:\n${lines}\n\nTOTAL ABONADO: $${money(t)}\n\nObservaciones: ${document.getElementById("notes").value || "Sin observaciones"}`;
+ document.getElementById("orderNumber").textContent=order;
+ document.getElementById("paidTotal").textContent=money(t);
+ document.getElementById("whatsappBtn").href=`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+ closeModal("checkoutModal");document.getElementById("successModal").classList.add("active");
+ cart=[];updateCart();
+}
+renderProducts();updateCart();
+</script>
+</body>
+</html>
